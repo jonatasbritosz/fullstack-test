@@ -1,7 +1,27 @@
+
+services:
+  spotify:
+    token:
+      uri: https://accounts.spotify.com
+      path: /api/token
+      id: af6c1e16ee35456fb07b3ddc44df74b5
+      secret: 79b14eb07a7a46e4b67183a3569e29c8
+    uri: https://api.spotify.com
+    timeout: 5000
+  weather:
+    uri: http://api.openweathermap.org/data/2.5/weather
+    id: 98c4a8267a7421ef7d4fe682aa0b71a2
+    timeout: 5000
+  
+
 feign:
   client:
     config:
-      default:
+      feignName:
         connectTimeout: 5000
         readTimeout: 5000
-        loggerLevel: basic
+        decode404: false
+        
+spring:
+ main:
+  allowBeanDefinitionOverriding: true

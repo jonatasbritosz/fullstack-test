@@ -1,7 +1,9 @@
 package teste.java.com.gobots.fullstack.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Weather {
 	
 	private int id;
@@ -65,6 +67,7 @@ public class Weather {
 				+ ", coordenadas=" + coord + '}';
 	}
 
+	@JsonIgnoreProperties(ignoreUnknown = true)
 	public class MainInfo {
 		private int id;
 		private float temp;
