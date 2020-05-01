@@ -1,5 +1,7 @@
 package teste.java.com.gobots.fullstack.service.configuration;
 
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,8 +13,10 @@ import feign.Contract;
 import feign.Request;
 import feign.RequestInterceptor;
 import feign.codec.Decoder;
+import feign.codec.ErrorDecoder;
 import feign.form.ContentType;
 import feign.form.FormEncoder;
+import teste.java.com.gobots.fullstack.service.decoder.SpotifyErrorDecoder;
 import teste.java.com.gobots.fullstack.service.interceptor.ResponseInterceptor;
 import teste.java.com.gobots.fullstack.service.spotify.SpotifyAuthClient;
 import teste.java.com.gobots.fullstack.service.spotify.SpotifyAuthenticationRequestInterceptor;
@@ -39,7 +43,10 @@ public class SpotifyServiceConfiguration {
 	private String clientSecret;
 
 	@Value("${services.spotify.timeout}")
-	private int spotifyTimeout;
+	private int connectTimeout;
+
+	@Value("${services.spotify.timeout}")
+	private int readTimeout;
 
 	@Bean
 	public SpotifyAuthClient createAuthenticateApi() {
@@ -68,10 +75,11 @@ public class SpotifyServiceConfiguration {
 		return new ResponseInterceptor(objectMapper);
 	}
 
-	/*
-	 * @Bean public ErrorDecoder createSpotifyErrorDecoder() { return new
-	 * SpotifyErrorDecoder(); }
-	 */
+	@Bean
+	public ErrorDecoder createSpotifyErrorDecoder() {
+		return new SpotifyErrorDecoder();
+	}
+
 	@Bean
 	public Contract useFeignAnnotations() {
 		return new Contract.Default();
@@ -79,7 +87,8 @@ public class SpotifyServiceConfiguration {
 
 	private ApiClient buildBaseApiClient() {
 		ApiClient apiClient = new ApiClient();
-		apiClient.getFeignBuilder().options(new Request.Options(spotifyTimeout, spotifyTimeout));
+		apiClient.getFeignBuilder()
+				.options(new Request.Options(connectTimeout, TimeUnit.SECONDS, readTimeout, TimeUnit.SECONDS, true));
 		apiClient.getFeignBuilder().requestInterceptor(getRequestInterceptor());
 		return apiClient;
 	}

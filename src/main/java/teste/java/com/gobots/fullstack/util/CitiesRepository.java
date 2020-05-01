@@ -17,11 +17,11 @@ import com.google.gson.stream.JsonReader;
 import teste.java.com.gobots.fullstack.domain.City;
 
 @Service
-public class FakeCitiesRepository {
+public class CitiesRepository {
 
-	private static String fileName = "classpath:city.list.json";
+	private static String citiesFileName = "classpath:city.list.json";
 
-	private Collection<City> cidades;
+	private LinkedHashSet<City> cidades;
 	
 	@Autowired
     ResourceLoader resourceLoader;
@@ -35,7 +35,7 @@ public class FakeCitiesRepository {
 		cidades = new LinkedHashSet<City>();
 		try {
 			
-			Resource resource = resourceLoader.getResource(fileName);
+			Resource resource = resourceLoader.getResource(citiesFileName);
 			InputStream stream = resource.getInputStream();
 			JsonReader reader = new JsonReader(new InputStreamReader(stream, "UTF-8"));
 			Gson gson = new Gson();
@@ -55,11 +55,11 @@ public class FakeCitiesRepository {
 		return cidades;
 	}
 
-	public Collection<City> getCidades() {
+	public LinkedHashSet<City> getCidades() {
 		return cidades;
 	}
 
-	public void setCidades(Collection<City> cidades) {
+	public void setCidades(LinkedHashSet<City> cidades) {
 		this.cidades = cidades;
 	}
 	

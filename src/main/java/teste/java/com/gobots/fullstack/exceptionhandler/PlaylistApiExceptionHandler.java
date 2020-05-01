@@ -1,86 +1,79 @@
 package teste.java.com.gobots.fullstack.exceptionhandler;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import feign.RetryableException;
 
 @ControllerAdvice
-public class PlaylistApiExceptionHandler  extends ResponseEntityExceptionHandler{
-	
-	@Autowired
-	private MessageSource messageSource;
+public class PlaylistApiExceptionHandler {
 
-	@Override
-	protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-		String mensagemUsuario = messageSource.getMessage("mensagem.invalida", null, LocaleContextHolder.getLocale());
-		String mensagemDesenvolvedor = Optional.ofNullable(ex.getCause()).orElse(ex).toString();
-		List<Erro> erros = Arrays.asList(new Erro(mensagemUsuario, mensagemDesenvolvedor));
-		return handleExceptionInternal(ex, erros, headers, HttpStatus.BAD_REQUEST, request);
-	}
-
-	@Override
-	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
-			HttpHeaders headers, HttpStatus status, WebRequest request) {
-		List<Erro> erros = criarListaDeErros(ex.getBindingResult());
-		return handleExceptionInternal(ex, erros, headers, HttpStatus.BAD_REQUEST, request);
+	@ExceptionHandler(value = Exception.class)
+	public ResponseEntity<Object> defaultErrorHandler(Exception e) {
+		Set<String> messages = new HashSet<>();
+		messages.add("Erro na consulta ao servidor.");
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(new BussinesExceptionError(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+						HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), e.getMessage(), messages));
 	}
 	
-	@ExceptionHandler({EmptyResultDataAccessException.class})
-	@ResponseStatus(HttpStatus.NOT_FOUND)
-	public ResponseEntity<Object> handleEmptyResultDataAccessException(EmptyResultDataAccessException ex, WebRequest request) {
-		String mensagemUsuario = messageSource.getMessage("recurso.nao-encontrado", null, LocaleContextHolder.getLocale());
-		String mensagemDesenvolvedor = Optional.ofNullable(ex.getCause()).orElse(ex).toString();
-		List<Erro> erros = Arrays.asList(new Erro(mensagemUsuario, mensagemDesenvolvedor));
-		return handleExceptionInternal(ex, erros, new HttpHeaders(), HttpStatus.BAD_REQUEST, request);
+	@ExceptionHandler(value = RetryableException.class)
+	public ResponseEntity<Object> handleRetryableException(RetryableException e) {
+		Set<String> messages = new HashSet<>();
+		messages.add("Serviço Indisponível no Momento.");
+		return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+				.body(new BussinesExceptionError(HttpStatus.SERVICE_UNAVAILABLE.value(),
+						HttpStatus.SERVICE_UNAVAILABLE.getReasonPhrase(), e.getMessage(), messages));
 	}
 
-	private List<Erro> criarListaDeErros(BindingResult bindingResult) {
-		List<Erro> erros = new ArrayList<>();
-		for (FieldError fieldError : bindingResult.getFieldErrors()) {
-			String mensagemUsuario = messageSource.getMessage(fieldError, LocaleContextHolder.getLocale());
-			String mensagemDesenvolvedor = fieldError.toString();
-			erros.add(new Erro(mensagemUsuario, mensagemDesenvolvedor));
-		}
-		return erros;
+	@ExceptionHandler
+	@ResponseBody
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	public ResponseEntity<Object> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+		Set<String> messages = new HashSet<>();
+		String msg = String.format("Tipo entrada errado. Parâmetro '%s', Valor: '%s', Tipo Esperado: %s", e.getName(),
+				e.getValue(), e.getRequiredType());
+		messages.add(msg);
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new BussinesExceptionError(
+				HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.getReasonPhrase(), e.getMostSpecificCause().toString(), messages));
 	}
 
-	public static class Erro {
+	@ExceptionHandler(value = BussinesException.class)
+	public ResponseEntity<Object> handleBussinesException(BussinesException e) {
+		Set<String> messages = new HashSet<>();
+		messages.add(e.getMessage());
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new BussinesExceptionError(
+				HttpStatus.BAD_REQUEST.value(), HttpStatus.BAD_REQUEST.getReasonPhrase(), e.getMessage(), messages));
+	}
 
-		private String mensagemUsuario;
-		private String mensagemDesenvolvedor;
-
-		public Erro(String mensagemUsuario, String mensagemDesenvolvedor) {
-			this.mensagemUsuario = mensagemUsuario;
-			this.mensagemDesenvolvedor = mensagemDesenvolvedor;
+	@ExceptionHandler(value = HttpClientErrorException.class)
+	public ResponseEntity<Object> handleClientException(HttpClientErrorException e) {
+		Set<String> messages = new HashSet<>();
+		if (e.getStatusCode().value() == 404) {
+			messages.add("Playlist não encontrada.");
+		} else {
+			messages.add(e.getMessage());
 		}
+		return ResponseEntity.status(e.getStatusCode()).body(
+				new BussinesExceptionError(e.getStatusCode().value(), e.getStatusCode().getReasonPhrase(), e.getLocalizedMessage(), messages));
+	}
 
-		public String getMensagemUsuario() {
-			return mensagemUsuario;
-		}
-
-		public String getMensagemDesenvolvedor() {
-			return mensagemDesenvolvedor;
-		}
+	@ExceptionHandler(value = HttpServerErrorException.class)
+	public ResponseEntity<Object> handleServerException(HttpServerErrorException e) {
+		Set<String> messages = new HashSet<>();
+		messages.add(e.getMessage());
+		return ResponseEntity.status(e.getStatusCode()).body(
+				new BussinesExceptionError(e.getStatusCode().value(), e.getStatusCode().getReasonPhrase(), e.getMessage(), messages));
 	}
 
 }
