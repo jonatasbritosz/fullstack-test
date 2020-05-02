@@ -35,6 +35,7 @@ A api possuí os dois endpoints a seguir:
 Exemplos de uso após subir serviço
 
 http://localhost:8080/playlist?city=São Luís
+
 http://localhost:8080/playlist?lat=-10.4&lon=40.1
 
 
