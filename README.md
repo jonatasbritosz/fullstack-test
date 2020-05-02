@@ -29,8 +29,8 @@ Fork this project and share it with your interviwer
 
 ## Utilização
 A api possuí os dois endpoints a seguir:
-/playlist?city=
-/playlist?lat=&lon=
+>/playlist?city=
+>/playlist?lat=&lon=
 
 Exemplos de uso após subir serviço
 
