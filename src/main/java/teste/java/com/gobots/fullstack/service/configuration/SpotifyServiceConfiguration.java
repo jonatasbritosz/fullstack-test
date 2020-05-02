@@ -16,6 +16,8 @@ import feign.codec.Decoder;
 import feign.codec.ErrorDecoder;
 import feign.form.ContentType;
 import feign.form.FormEncoder;
+import feign.gson.GsonDecoder;
+import feign.gson.GsonEncoder;
 import teste.java.com.gobots.fullstack.service.decoder.SpotifyErrorDecoder;
 import teste.java.com.gobots.fullstack.service.interceptor.ResponseInterceptor;
 import teste.java.com.gobots.fullstack.service.spotify.SpotifyAuthClient;
@@ -97,8 +99,8 @@ public class SpotifyServiceConfiguration {
 		final ApiClient apiClient = buildBaseApiClient();
 		apiClient.setBasePath(tokenUri);
 		apiClient.getFeignBuilder().requestInterceptor(getAuthRequestInterceptor());
-		apiClient.getFeignBuilder().encoder(getEncoder());
-		apiClient.getFeignBuilder().decoder(getDecoder());
+		apiClient.getFeignBuilder().encoder(new GsonEncoder());
+		apiClient.getFeignBuilder().decoder(new GsonDecoder());
 		return apiClient;
 	}
 

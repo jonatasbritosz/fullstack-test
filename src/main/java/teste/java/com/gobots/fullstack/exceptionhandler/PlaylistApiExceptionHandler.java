@@ -17,7 +17,7 @@ import feign.RetryableException;
 
 @ControllerAdvice
 public class PlaylistApiExceptionHandler {
-
+	
 	@ExceptionHandler(value = Exception.class)
 	public ResponseEntity<Object> defaultErrorHandler(Exception e) {
 		Set<String> messages = new HashSet<>();

@@ -41,7 +41,6 @@ public class PlaylistController {
 			@RequestParam(value = "lon") float lon) throws BussinesException, NumberFormatException {
 
 		dataEntryValidator.validateLatitudeLongitude(lat, lon);
-		
 		PlaylistRecuperada playlist = playlistService.searchPlaylist(lat, lon);
 		return playlist;
 	}
