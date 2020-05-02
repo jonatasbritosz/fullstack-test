@@ -25,3 +25,16 @@ You can make usage of OpenWeatherMaps API (https://openweathermap.org) to fetch 
 
 ## Submission
 Fork this project and share it with your interviwer
+
+
+## Utilização
+A api possuí os dois endpoints a seguir:
+/playlist?city=
+/playlist?lat=&lon=
+
+Exemplos de uso após subir serviço
+
+http://localhost:8080/playlist?city=São Luís
+http://localhost:8080/playlist?lat=-10.4&lon=40.1
+
+
